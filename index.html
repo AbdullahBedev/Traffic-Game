@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Light Management</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Game UI -->
+        <div id="ui-overlay">
+            <div id="score">Score: <span id="score-value">0</span></div>
+            <div id="timer">Time: <span id="timer-value">0:00</span></div>
+            <div id="traffic-flow">Traffic Flow: <span id="flow-value">0</span> vehicles/min</div>
+            <div id="accidents">Accidents: <span id="accident-value">0</span></div>
+            <div id="max-wait">Longest Wait: <span id="wait-value">0</span>s</div>
+        </div>
+
+        <!-- Controls Help -->
+        <div id="controls-help">
+            <h3>Controls:</h3>
+            <ul>
+                <li>Click on traffic light to toggle (Red/Yellow/Green)</li>
+                <li>Space: Pause game</li>
+            </ul>
+        </div>
+
+        <!-- Game State Overlays -->
+        <div id="start-screen" class="game-overlay">
+            <h1>Traffic Light Management</h1>
+            <p>Control the traffic lights to keep traffic flowing smoothly!</p>
+            <p>Goals:</p>
+            <ul>
+                <li>Prevent accidents</li>
+                <li>Ensure no car waits longer than 30 seconds</li>
+                <li>Maximize traffic flow</li>
+            </ul>
+            <div class="difficulty-select">
+                <h3>Select Difficulty:</h3>
+                <button data-difficulty="easy" class="difficulty-btn selected">Easy</button>
+                <button data-difficulty="medium" class="difficulty-btn">Medium</button>
+                <button data-difficulty="hard" class="difficulty-btn">Hard</button>
+            </div>
+            <button id="start-btn" class="action-btn">Start Game</button>
+        </div>
+
+        <div id="pause-screen" class="game-overlay hidden">
+            <h2>Game Paused</h2>
+            <button id="resume-btn" class="action-btn">Resume</button>
+            <button id="restart-btn" class="action-btn">Restart</button>
+            <button id="quit-btn" class="action-btn">Quit to Menu</button>
+        </div>
+
+        <div id="game-over-screen" class="game-overlay hidden">
+            <h2>Game Over!</h2>
+            <div id="game-over-reason"></div>
+            <div class="stats">
+                <p>Final Score: <span id="final-score">0</span></p>
+                <p>Vehicles Managed: <span id="vehicles-managed">0</span></p>
+                <p>Average Flow Rate: <span id="avg-flow-rate">0</span> vehicles/min</p>
+                <p>Time Played: <span id="time-played">0:00</span></p>
+                <p>Accidents: <span id="total-accidents">0</span></p>
+                <p>Max Wait Time: <span id="max-wait-time">0</span>s</p>
+            </div>
+            <button id="retry-btn" class="action-btn">Try Again</button>
+            <button id="menu-btn" class="action-btn">Back to Menu</button>
+        </div>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html> 
