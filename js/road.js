@@ -1,10 +1,6 @@
 export const ROAD_TYPES = {
     STRAIGHT_HORIZONTAL: 'straight_h',
     STRAIGHT_VERTICAL: 'straight_v',
-    CURVE_NE: 'curve_ne', // North to East
-    CURVE_SE: 'curve_se', // South to East
-    CURVE_SW: 'curve_sw', // South to West
-    CURVE_NW: 'curve_nw', // North to West
     INTERSECTION: 'intersection'
 };
 
@@ -23,14 +19,6 @@ export class Road {
                 return { west: true, east: true, north: false, south: false };
             case ROAD_TYPES.STRAIGHT_VERTICAL:
                 return { west: false, east: false, north: true, south: true };
-            case ROAD_TYPES.CURVE_NE:
-                return { west: false, east: true, north: true, south: false };
-            case ROAD_TYPES.CURVE_SE:
-                return { west: false, east: true, north: false, south: true };
-            case ROAD_TYPES.CURVE_SW:
-                return { west: true, east: false, north: false, south: true };
-            case ROAD_TYPES.CURVE_NW:
-                return { west: true, east: false, north: true, south: false };
             case ROAD_TYPES.INTERSECTION:
                 return { west: true, east: true, north: true, south: true };
             default:
@@ -73,12 +61,6 @@ export class Road {
             case ROAD_TYPES.INTERSECTION:
                 this.drawIntersection(ctx, tileSize);
                 break;
-            case ROAD_TYPES.CURVE_NE:
-            case ROAD_TYPES.CURVE_SE:
-            case ROAD_TYPES.CURVE_SW:
-            case ROAD_TYPES.CURVE_NW:
-                this.drawCurvedRoad(ctx, tileSize, this.type);
-                break;
         }
 
         // Draw traffic light if present
@@ -112,25 +94,6 @@ export class Road {
         ctx.beginPath();
         ctx.moveTo(0, -tileSize / 4);
         ctx.lineTo(0, tileSize / 4);
-        ctx.stroke();
-    }
-
-    drawCurvedRoad(ctx, tileSize, type) {
-        ctx.beginPath();
-        switch (type) {
-            case ROAD_TYPES.CURVE_NE:
-                ctx.arc(-tileSize / 4, -tileSize / 8, tileSize / 4, 0, Math.PI / 2);
-                break;
-            case ROAD_TYPES.CURVE_SE:
-                ctx.arc(-tileSize / 4, tileSize / 8, tileSize / 4, -Math.PI / 2, 0);
-                break;
-            case ROAD_TYPES.CURVE_SW:
-                ctx.arc(tileSize / 4, tileSize / 8, tileSize / 4, -Math.PI, -Math.PI / 2);
-                break;
-            case ROAD_TYPES.CURVE_NW:
-                ctx.arc(tileSize / 4, -tileSize / 8, tileSize / 4, Math.PI / 2, Math.PI);
-                break;
-        }
         ctx.stroke();
     }
 

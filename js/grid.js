@@ -156,10 +156,6 @@ export class Grid {
         const displayNames = {
             [ROAD_TYPES.STRAIGHT_HORIZONTAL]: 'Straight Horizontal',
             [ROAD_TYPES.STRAIGHT_VERTICAL]: 'Straight Vertical',
-            [ROAD_TYPES.CURVE_NE]: 'Curve North-East',
-            [ROAD_TYPES.CURVE_SE]: 'Curve South-East',
-            [ROAD_TYPES.CURVE_SW]: 'Curve South-West',
-            [ROAD_TYPES.CURVE_NW]: 'Curve North-West',
             [ROAD_TYPES.INTERSECTION]: 'Intersection'
         };
         this.roadTypeElement.textContent = displayNames[this.currentRoadType];

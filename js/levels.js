@@ -65,11 +65,21 @@ export const LEVELS = {
             { x: 8, y: 4, type: ROAD_TYPES.INTERSECTION },
             { x: 4, y: 8, type: ROAD_TYPES.INTERSECTION },
             { x: 8, y: 8, type: ROAD_TYPES.INTERSECTION },
-            // Curved connections
-            { x: 5, y: 4, type: ROAD_TYPES.CURVE_NE },
-            { x: 7, y: 4, type: ROAD_TYPES.CURVE_NW },
-            { x: 5, y: 8, type: ROAD_TYPES.CURVE_SE },
-            { x: 7, y: 8, type: ROAD_TYPES.CURVE_SW }
+            // Straight connections - horizontal
+            { x: 5, y: 4, type: ROAD_TYPES.STRAIGHT_HORIZONTAL },
+            { x: 7, y: 4, type: ROAD_TYPES.STRAIGHT_HORIZONTAL },
+            { x: 5, y: 8, type: ROAD_TYPES.STRAIGHT_HORIZONTAL },
+            { x: 7, y: 8, type: ROAD_TYPES.STRAIGHT_HORIZONTAL },
+            // Straight connections - vertical
+            { x: 4, y: 5, type: ROAD_TYPES.STRAIGHT_VERTICAL },
+            { x: 4, y: 7, type: ROAD_TYPES.STRAIGHT_VERTICAL },
+            { x: 8, y: 5, type: ROAD_TYPES.STRAIGHT_VERTICAL },
+            { x: 8, y: 7, type: ROAD_TYPES.STRAIGHT_VERTICAL },
+            // Connect to center
+            { x: 5, y: 6, type: ROAD_TYPES.STRAIGHT_HORIZONTAL },
+            { x: 7, y: 6, type: ROAD_TYPES.STRAIGHT_HORIZONTAL },
+            { x: 6, y: 5, type: ROAD_TYPES.STRAIGHT_VERTICAL },
+            { x: 6, y: 7, type: ROAD_TYPES.STRAIGHT_VERTICAL }
         ],
         winConditions: {
             minScore: 5000,

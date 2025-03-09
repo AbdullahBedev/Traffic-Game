@@ -1,10 +1,13 @@
 export class Car {
+    static nextId = 1;
+    
     constructor(direction, x, y) {
         // Basic initialization with defaults
         this.reset(direction, x, y);
     }
     
     reset(direction, x, y) {
+        this.id = Car.nextId++;
         this.startDirection = direction; // north, east, south, west
         
         // Starting position
@@ -26,6 +29,7 @@ export class Car {
         this.waitTime = 0;
         this.creationTime = Date.now();
         this.completionTime = 0;
+        this.lastWaitTimeUpdate = 0; // Track the last time we updated wait time
         
         // Path following
         this.path = null;
@@ -78,66 +82,100 @@ export class Car {
         const centerX = intersection.centerX;
         const centerY = intersection.centerY;
         
+        // Check if we're already in the intersection
+        const inIntersection = (
+            this.x >= centerX - roadWidth/2 &&
+            this.x <= centerX + roadWidth/2 &&
+            this.y >= centerY - roadWidth/2 &&
+            this.y <= centerY + roadWidth/2
+        );
+        
+        // If we're already in the intersection, don't stop
+        if (inIntersection) {
+            return false;
+        }
+        
+        // Calculate distance to the stop line
+        let distanceToStopLine;
+        let shouldStop = false;
+        
         switch (this.startDirection) {
             case 'north':
                 stopLine = centerY - roadWidth/2;
-                if (this.y < stopLine && this.y + this.currentSpeed * 100 >= stopLine) {
+                distanceToStopLine = stopLine - this.y;
+                
+                // Only check if we're approaching the intersection from the north
+                if (this.y < stopLine && distanceToStopLine <= 50 && distanceToStopLine > 0) {
                     // Approaching the intersection from north
                     if (lightState === 'red' || lightState === 'yellow') {
-                        this.stopped = true;
-                        this.currentSpeed = 0;
-                        return true;
+                        shouldStop = true;
                     }
                 }
                 break;
+                
             case 'south':
                 stopLine = centerY + roadWidth/2;
-                if (this.y > stopLine && this.y - this.currentSpeed * 100 <= stopLine) {
+                distanceToStopLine = this.y - stopLine;
+                
+                // Only check if we're approaching the intersection from the south
+                if (this.y > stopLine && distanceToStopLine <= 50 && distanceToStopLine > 0) {
                     // Approaching the intersection from south
                     if (lightState === 'red' || lightState === 'yellow') {
-                        this.stopped = true;
-                        this.currentSpeed = 0;
-                        return true;
+                        shouldStop = true;
                     }
                 }
                 break;
+                
             case 'east':
                 stopLine = centerX + roadWidth/2;
-                if (this.x > stopLine && this.x - this.currentSpeed * 100 <= stopLine) {
+                distanceToStopLine = this.x - stopLine;
+                
+                // Only check if we're approaching the intersection from the east
+                if (this.x > stopLine && distanceToStopLine <= 50 && distanceToStopLine > 0) {
                     // Approaching the intersection from east
                     if (lightState === 'red' || lightState === 'yellow') {
-                        this.stopped = true;
-                        this.currentSpeed = 0;
-                        return true;
+                        shouldStop = true;
                     }
                 }
                 break;
+                
             case 'west':
                 stopLine = centerX - roadWidth/2;
-                if (this.x < stopLine && this.x + this.currentSpeed * 100 >= stopLine) {
+                distanceToStopLine = stopLine - this.x;
+                
+                // Only check if we're approaching the intersection from the west
+                if (this.x < stopLine && distanceToStopLine <= 50 && distanceToStopLine > 0) {
                     // Approaching the intersection from west
                     if (lightState === 'red' || lightState === 'yellow') {
-                        this.stopped = true;
-                        this.currentSpeed = 0;
-                        return true;
+                        shouldStop = true;
                     }
                 }
                 break;
         }
         
-        // If we get here, we're not stopped at a light or it's green
-        if (this.stopped) {
+        // Apply stopping logic
+        if (shouldStop) {
+            this.stopped = true;
+            this.currentSpeed = 0;
+            this.waitTime += 16; // Approximate milliseconds per frame
+            return true;
+        } else if (this.stopped) {
             // Resume movement if we were stopped
             this.stopped = false;
             // Gradually accelerate
             this.currentSpeed = Math.min(this.maxSpeed, this.currentSpeed + 0.01);
+            
+            // Update max wait time in game if we've been waiting
+            if (this.waitTime > 0 && intersection.game) {
+                // Report one final time with the final wait time
+                intersection.game.updateMaxWaitTime(this.waitTime, this.id);
+                // Then report that we're no longer waiting with a wait time of 0
+                intersection.game.updateMaxWaitTime(0, this.id);
+                this.waitTime = 0; // Reset wait time when we start moving again
+                this.lastWaitTimeUpdate = 0;
+            }
         } else {
             this.currentSpeed = this.maxSpeed;
-        }
-        
-        // Update max wait time in game if we've been waiting
-        if (this.waitTime > 0 && intersection.game) {
-            intersection.game.updateMaxWaitTime(this.waitTime);
         }
         
         return false;
@@ -233,16 +271,21 @@ export class Car {
                 y: this.path.start.y + (this.path.end.y - this.path.start.y) * t
             };
         } else {
-            // For curved paths, use Bezier curve formula
+            // For curved paths, use cubic Bezier curve formula (matching updateCurvedPath)
             const p0 = this.path.start;
-            const p2 = this.path.end;
+            const p1 = this.path.control1;
+            const p2 = this.path.control2;
+            const p3 = this.path.end;
             
-            // Control point depends on the direction of the turn
-            const cp = this.path.controlPoint;
-            
-            // Quadratic Bezier formula
-            const x = (1-t)*(1-t)*p0.x + 2*(1-t)*t*cp.x + t*t*p2.x;
-            const y = (1-t)*(1-t)*p0.y + 2*(1-t)*t*cp.y + t*t*p2.y;
+            // Cubic Bezier formula
+            const x = Math.pow(1-t, 3) * p0.x + 
+                     3 * Math.pow(1-t, 2) * t * p1.x + 
+                     3 * (1-t) * Math.pow(t, 2) * p2.x + 
+                     Math.pow(t, 3) * p3.x;
+            const y = Math.pow(1-t, 3) * p0.y + 
+                     3 * Math.pow(1-t, 2) * t * p1.y + 
+                     3 * (1-t) * Math.pow(t, 2) * p2.y + 
+                     Math.pow(t, 3) * p3.y;
             
             return { x, y };
         }
@@ -250,16 +293,32 @@ export class Car {
     
     update(deltaTime, intersection) {
         if (this.collided) {
+            // If collided and we were previously waiting, report that we're no longer waiting
+            if (this.waitTime > 0 && intersection && intersection.game) {
+                intersection.game.updateMaxWaitTime(0, this.id);
+                this.waitTime = 0;
+            }
             return false; // Don't update collided cars
         }
         
         // Update wait time if stopped at a light
         if (this.stopped) {
             this.waitTime += deltaTime;
+            
+            // Report wait time to game regularly (every 500ms)
+            if (intersection && intersection.game && 
+                (this.waitTime - this.lastWaitTimeUpdate > 500 || this.waitTime >= 30000)) {
+                intersection.game.updateMaxWaitTime(this.waitTime, this.id);
+                this.lastWaitTimeUpdate = this.waitTime;
+            }
         }
         
         // Check if we've reached the end of the path
         if (this.t >= 1) {
+            // If we were waiting before completion, make sure to report we're no longer waiting
+            if (this.waitTime > 0 && intersection && intersection.game) {
+                intersection.game.updateMaxWaitTime(0, this.id);
+            }
             this.completionTime = Date.now() - this.creationTime;
             return true; // Indicate the car has completed its journey
         }
@@ -270,6 +329,15 @@ export class Car {
         } else if (this.pathType === 'turn') {
             this.updateCurvedPath(deltaTime);
         }
+        
+        // Always ensure the car is exactly on the calculated path
+        // This prevents any drift or inconsistencies
+        const exactPosition = this.getPositionAt(this.t);
+        this.x = exactPosition.x;
+        this.y = exactPosition.y;
+        
+        // Constrain car to road boundaries
+        this.constrainToRoad(intersection);
         
         // Check for traffic light ahead
         this.checkTrafficLight(intersection);
@@ -322,6 +390,12 @@ export class Car {
         // For curved paths, use Bezier curve interpolation
         const distanceToMove = this.currentSpeed * deltaTime;
         
+        // If control points are missing, fall back to straight path update
+        if (!this.path.control1 || !this.path.control2) {
+            this.updateStraightPath(deltaTime);
+            return;
+        }
+        
         // Calculate approximate path length for curved path
         const start = this.path.start;
         const control1 = this.path.control1;
@@ -369,24 +443,109 @@ export class Car {
                 Math.pow(t, 3) * end.y;
     }
     
+    constrainToRoad(intersection) {
+        if (!intersection) return;
+        
+        // Get road boundaries
+        const roadBoundaries = intersection.roadBoundaries;
+        
+        // Determine which road segment the car is on based on its position
+        let onRoad = false;
+        
+        // Check if car is on the north road
+        if (this.y <= intersection.centerY - intersection.roadWidth/2 &&
+            this.x >= intersection.centerX - intersection.roadWidth/2 &&
+            this.x <= intersection.centerX + intersection.roadWidth/2) {
+            onRoad = true;
+        }
+        
+        // Check if car is on the east road
+        if (this.x >= intersection.centerX + intersection.roadWidth/2 &&
+            this.y >= intersection.centerY - intersection.roadWidth/2 &&
+            this.y <= intersection.centerY + intersection.roadWidth/2) {
+            onRoad = true;
+        }
+        
+        // Check if car is on the south road
+        if (this.y >= intersection.centerY + intersection.roadWidth/2 &&
+            this.x >= intersection.centerX - intersection.roadWidth/2 &&
+            this.x <= intersection.centerX + intersection.roadWidth/2) {
+            onRoad = true;
+        }
+        
+        // Check if car is on the west road
+        if (this.x <= intersection.centerX - intersection.roadWidth/2 &&
+            this.y >= intersection.centerY - intersection.roadWidth/2 &&
+            this.y <= intersection.centerY + intersection.roadWidth/2) {
+            onRoad = true;
+        }
+        
+        // Check if car is in the intersection
+        if (this.x >= intersection.centerX - intersection.roadWidth/2 &&
+            this.x <= intersection.centerX + intersection.roadWidth/2 &&
+            this.y >= intersection.centerY - intersection.roadWidth/2 &&
+            this.y <= intersection.centerY + intersection.roadWidth/2) {
+            onRoad = true;
+        }
+        
+        // If car is off the road, adjust its position
+        if (!onRoad) {
+            // Find the nearest point on the path
+            const t = this.findNearestPointOnPath();
+            if (t !== null) {
+                this.t = t;
+                const exactPosition = this.getPositionAt(this.t);
+                this.x = exactPosition.x;
+                this.y = exactPosition.y;
+            }
+        }
+    }
+    
+    findNearestPointOnPath() {
+        if (!this.path) return null;
+        
+        // Sample points along the path to find the closest one
+        const samples = 20;
+        let closestT = null;
+        let minDistance = Infinity;
+        
+        for (let i = 0; i <= samples; i++) {
+            const t = i / samples;
+            const pos = this.getPositionAt(t);
+            const dx = pos.x - this.x;
+            const dy = pos.y - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestT = t;
+            }
+        }
+        
+        return closestT;
+    }
+    
     render(ctx, intersection) {
         if (!this.path) return;
         
         // Save the canvas state
         ctx.save();
         
+        // Get exact position from the path calculation to ensure consistency
+        const exactPosition = this.getPositionAt(this.t);
+        
         // Determine car rotation based on movement direction
         let angle = 0;
         const nextPos = this.getPositionAt(Math.min(this.t + 0.05, 1));
-        const dx = nextPos.x - this.x;
-        const dy = nextPos.y - this.y;
+        const dx = nextPos.x - exactPosition.x;
+        const dy = nextPos.y - exactPosition.y;
         
         if (dx !== 0 || dy !== 0) {
             angle = Math.atan2(dy, dx);
         }
         
-        // Translate to car position
-        ctx.translate(this.x, this.y);
+        // Translate to car position using exact path calculation
+        ctx.translate(exactPosition.x, exactPosition.y);
         ctx.rotate(angle);
         
         // Draw car body
@@ -407,16 +566,17 @@ export class Car {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            // Change color based on wait time
-            if (waitInSeconds >= 20) {
+            // Change color based on wait time - matching game UI colors
+            if (waitInSeconds >= 25) {
                 ctx.fillStyle = 'red'; // Critical wait time
-            } else if (waitInSeconds >= 10) {
+            } else if (waitInSeconds >= 15) {
                 ctx.fillStyle = 'orange'; // Warning
             } else {
-                ctx.fillStyle = 'white'; // Normal
+                ctx.fillStyle = 'green'; // Normal
             }
             
-            ctx.fillText(`${waitInSeconds}s`, 0, 0);
+            // Draw wait time with seconds unit
+            ctx.fillText(`${waitInSeconds}s`, 0, -this.height - 5);
         }
         
         // Draw collision effect if applicable

@@ -28,148 +28,64 @@ export class Intersection {
             west: { x: -this.roadWidth, y: 0, size: 20 }
         };
         
-        // Lane entry and exit points (for car pathing)
-        this.lanes = {
-            // Format: [startX, startY, endX, endY]
-            northToSouth: {
-                start: { x: this.centerX - this.laneWidth/2, y: 0 },
-                end: { x: this.centerX - this.laneWidth/2, y: this.height }
+        // Define road boundaries for path calculations
+        this.roadBoundaries = {
+            north: {
+                leftEdge: this.centerX - this.roadWidth/2,
+                rightEdge: this.centerX + this.roadWidth/2,
+                topEdge: 0,
+                bottomEdge: this.centerY - this.roadWidth/2
             },
-            northToEast: {
-                start: { x: this.centerX - this.laneWidth/2, y: 0 },
-                end: { x: this.width, y: this.centerY - this.laneWidth/2 }
+            east: {
+                leftEdge: this.centerX + this.roadWidth/2,
+                rightEdge: this.width,
+                topEdge: this.centerY - this.roadWidth/2,
+                bottomEdge: this.centerY + this.roadWidth/2
             },
-            northToWest: {
-                start: { x: this.centerX - this.laneWidth/2, y: 0 },
-                end: { x: 0, y: this.centerY - this.laneWidth/2 }
+            south: {
+                leftEdge: this.centerX - this.roadWidth/2,
+                rightEdge: this.centerX + this.roadWidth/2,
+                topEdge: this.centerY + this.roadWidth/2,
+                bottomEdge: this.height
             },
-            southToNorth: {
-                start: { x: this.centerX + this.laneWidth/2, y: this.height },
-                end: { x: this.centerX + this.laneWidth/2, y: 0 }
-            },
-            southToEast: {
-                start: { x: this.centerX + this.laneWidth/2, y: this.height },
-                end: { x: this.width, y: this.centerY - this.laneWidth/2 }
-            },
-            southToWest: {
-                start: { x: this.centerX + this.laneWidth/2, y: this.height },
-                end: { x: 0, y: this.centerY - this.laneWidth/2 }
-            },
-            eastToWest: {
-                start: { x: this.width, y: this.centerY + this.laneWidth/2 },
-                end: { x: 0, y: this.centerY + this.laneWidth/2 }
-            },
-            eastToNorth: {
-                start: { x: this.width, y: this.centerY + this.laneWidth/2 },
-                end: { x: this.centerX + this.laneWidth/2, y: 0 }
-            },
-            eastToSouth: {
-                start: { x: this.width, y: this.centerY + this.laneWidth/2 },
-                end: { x: this.centerX + this.laneWidth/2, y: this.height }
-            },
-            westToEast: {
-                start: { x: 0, y: this.centerY - this.laneWidth/2 },
-                end: { x: this.width, y: this.centerY - this.laneWidth/2 }
-            },
-            westToNorth: {
-                start: { x: 0, y: this.centerY - this.laneWidth/2 },
-                end: { x: this.centerX - this.laneWidth/2, y: 0 }
-            },
-            westToSouth: {
-                start: { x: 0, y: this.centerY - this.laneWidth/2 },
-                end: { x: this.centerX - this.laneWidth/2, y: this.height }
+            west: {
+                leftEdge: 0,
+                rightEdge: this.centerX - this.roadWidth/2,
+                topEdge: this.centerY - this.roadWidth/2,
+                bottomEdge: this.centerY + this.roadWidth/2
             }
         };
         
-        // Control points for curved paths
-        this.initializeControlPoints();
+        // Initialize lanes with proper road-aligned paths
+        this.initializeLanes();
     }
     
-    initializeControlPoints() {
-        // Add control points for curved paths
-        // These control points help smooth out turns through the intersection
+    initializeLanes() {
+        // Lane entry and exit points (for car pathing)
+        this.lanes = {};
         
-        const offset = this.laneWidth * 0.8;
-        
-        // Add control points to each path that involves a turn
-        // North to East (right turn)
-        this.lanes.northToEast.control1 = { 
-            x: this.centerX - this.laneWidth/2, 
-            y: this.centerY - this.roadWidth 
-        };
-        this.lanes.northToEast.control2 = { 
-            x: this.centerX + this.roadWidth, 
-            y: this.centerY - this.laneWidth/2 
+        // North to South (straight)
+        this.lanes.northToSouth = {
+            start: { x: this.centerX - this.laneWidth/2, y: 0 },
+            end: { x: this.centerX - this.laneWidth/2, y: this.height }
         };
         
-        // North to West (left turn)
-        this.lanes.northToWest.control1 = { 
-            x: this.centerX - this.laneWidth/2, 
-            y: this.centerY - offset 
-        };
-        this.lanes.northToWest.control2 = { 
-            x: this.centerX - offset, 
-            y: this.centerY - this.laneWidth/2 
+        // South to North (straight)
+        this.lanes.southToNorth = {
+            start: { x: this.centerX + this.laneWidth/2, y: this.height },
+            end: { x: this.centerX + this.laneWidth/2, y: 0 }
         };
         
-        // South to East (left turn)
-        this.lanes.southToEast.control1 = { 
-            x: this.centerX + this.laneWidth/2, 
-            y: this.centerY + offset 
-        };
-        this.lanes.southToEast.control2 = { 
-            x: this.centerX + offset, 
-            y: this.centerY - this.laneWidth/2 
+        // East to West (straight)
+        this.lanes.eastToWest = {
+            start: { x: this.width, y: this.centerY + this.laneWidth/2 },
+            end: { x: 0, y: this.centerY + this.laneWidth/2 }
         };
         
-        // South to West (right turn)
-        this.lanes.southToWest.control1 = { 
-            x: this.centerX + this.laneWidth/2, 
-            y: this.centerY + this.roadWidth 
-        };
-        this.lanes.southToWest.control2 = { 
-            x: this.centerX - this.roadWidth, 
-            y: this.centerY - this.laneWidth/2 
-        };
-        
-        // East to North (left turn)
-        this.lanes.eastToNorth.control1 = { 
-            x: this.centerX + offset, 
-            y: this.centerY + this.laneWidth/2 
-        };
-        this.lanes.eastToNorth.control2 = { 
-            x: this.centerX + this.laneWidth/2, 
-            y: this.centerY - offset 
-        };
-        
-        // East to South (right turn)
-        this.lanes.eastToSouth.control1 = { 
-            x: this.centerX + this.roadWidth, 
-            y: this.centerY + this.laneWidth/2 
-        };
-        this.lanes.eastToSouth.control2 = { 
-            x: this.centerX + this.laneWidth/2, 
-            y: this.centerY + this.roadWidth 
-        };
-        
-        // West to North (right turn)
-        this.lanes.westToNorth.control1 = { 
-            x: this.centerX - this.roadWidth, 
-            y: this.centerY - this.laneWidth/2 
-        };
-        this.lanes.westToNorth.control2 = { 
-            x: this.centerX - this.laneWidth/2, 
-            y: this.centerY - this.roadWidth 
-        };
-        
-        // West to South (left turn)
-        this.lanes.westToSouth.control1 = { 
-            x: this.centerX - offset, 
-            y: this.centerY - this.laneWidth/2 
-        };
-        this.lanes.westToSouth.control2 = { 
-            x: this.centerX - this.laneWidth/2, 
-            y: this.centerY + offset 
+        // West to East (straight)
+        this.lanes.westToEast = {
+            start: { x: 0, y: this.centerY - this.laneWidth/2 },
+            end: { x: this.width, y: this.centerY - this.laneWidth/2 }
         };
     }
     
@@ -191,60 +107,26 @@ export class Intersection {
         this.centerX = this.width / 2;
         this.centerY = this.height / 2;
         
-        // Re-initialize lane entry/exit points and control points
+        // Re-initialize lane entry/exit points
         this.lanes = {
             // Format: [startX, startY, endX, endY]
             northToSouth: {
                 start: { x: this.centerX - this.laneWidth/2, y: 0 },
                 end: { x: this.centerX - this.laneWidth/2, y: this.height }
             },
-            northToEast: {
-                start: { x: this.centerX - this.laneWidth/2, y: 0 },
-                end: { x: this.width, y: this.centerY - this.laneWidth/2 }
-            },
-            northToWest: {
-                start: { x: this.centerX - this.laneWidth/2, y: 0 },
-                end: { x: 0, y: this.centerY - this.laneWidth/2 }
-            },
             southToNorth: {
                 start: { x: this.centerX + this.laneWidth/2, y: this.height },
                 end: { x: this.centerX + this.laneWidth/2, y: 0 }
-            },
-            southToEast: {
-                start: { x: this.centerX + this.laneWidth/2, y: this.height },
-                end: { x: this.width, y: this.centerY - this.laneWidth/2 }
-            },
-            southToWest: {
-                start: { x: this.centerX + this.laneWidth/2, y: this.height },
-                end: { x: 0, y: this.centerY - this.laneWidth/2 }
             },
             eastToWest: {
                 start: { x: this.width, y: this.centerY + this.laneWidth/2 },
                 end: { x: 0, y: this.centerY + this.laneWidth/2 }
             },
-            eastToNorth: {
-                start: { x: this.width, y: this.centerY + this.laneWidth/2 },
-                end: { x: this.centerX + this.laneWidth/2, y: 0 }
-            },
-            eastToSouth: {
-                start: { x: this.width, y: this.centerY + this.laneWidth/2 },
-                end: { x: this.centerX + this.laneWidth/2, y: this.height }
-            },
             westToEast: {
                 start: { x: 0, y: this.centerY - this.laneWidth/2 },
                 end: { x: this.width, y: this.centerY - this.laneWidth/2 }
-            },
-            westToNorth: {
-                start: { x: 0, y: this.centerY - this.laneWidth/2 },
-                end: { x: this.centerX - this.laneWidth/2, y: 0 }
-            },
-            westToSouth: {
-                start: { x: 0, y: this.centerY - this.laneWidth/2 },
-                end: { x: this.centerX - this.laneWidth/2, y: this.height }
             }
         };
-        
-        this.initializeControlPoints();
     }
     
     handleClick(x, y) {
@@ -270,21 +152,24 @@ export class Intersection {
     }
     
     toggleTrafficLight(direction) {
+        // Get the current light
         const light = this.trafficLights[direction];
+        if (!light) return false;
         
-        // Cycle through states: red -> green -> yellow -> red
+        // Toggle the light state
         switch (light.state) {
             case 'red':
                 light.state = 'green';
                 break;
-            case 'green':
-                light.state = 'yellow';
-                break;
             case 'yellow':
                 light.state = 'red';
                 break;
+            case 'green':
+                light.state = 'yellow';
+                break;
         }
         
+        // Update toggle time
         light.toggleTime = Date.now();
         
         // Add visual effect for light change
@@ -294,7 +179,83 @@ export class Intersection {
         // Debug traffic light change
         console.log(`Traffic light ${direction} changed to ${light.state}`);
         
+        // If we're changing one direction, update the perpendicular directions too
+        this.updatePerpendicularLights(direction);
+        
         return true; // Indicate successful toggle
+    }
+    
+    updatePerpendicularLights(direction) {
+        // When a north/south light changes, update east/west lights
+        // When an east/west light changes, update north/south lights
+        
+        if (direction === 'north' || direction === 'south') {
+            // Update east/west lights
+            if (this.trafficLights.north.state === 'green' || this.trafficLights.south.state === 'green') {
+                // If north or south is green, east/west should be red
+                if (this.trafficLights.east.state === 'green') {
+                    this.trafficLights.east.state = 'yellow';
+                    this.trafficLights.east.toggleTime = Date.now();
+                    this.trafficLights.east.effectTime = 0;
+                    this.trafficLights.east.hasEffect = true;
+                }
+                
+                if (this.trafficLights.west.state === 'green') {
+                    this.trafficLights.west.state = 'yellow';
+                    this.trafficLights.west.toggleTime = Date.now();
+                    this.trafficLights.west.effectTime = 0;
+                    this.trafficLights.west.hasEffect = true;
+                }
+            } else if (this.trafficLights.north.state === 'red' && this.trafficLights.south.state === 'red') {
+                // If both north and south are red, east/west can be green
+                if (this.trafficLights.east.state === 'red') {
+                    this.trafficLights.east.state = 'green';
+                    this.trafficLights.east.toggleTime = Date.now();
+                    this.trafficLights.east.effectTime = 0;
+                    this.trafficLights.east.hasEffect = true;
+                }
+                
+                if (this.trafficLights.west.state === 'red') {
+                    this.trafficLights.west.state = 'green';
+                    this.trafficLights.west.toggleTime = Date.now();
+                    this.trafficLights.west.effectTime = 0;
+                    this.trafficLights.west.hasEffect = true;
+                }
+            }
+        } else if (direction === 'east' || direction === 'west') {
+            // Update north/south lights
+            if (this.trafficLights.east.state === 'green' || this.trafficLights.west.state === 'green') {
+                // If east or west is green, north/south should be red
+                if (this.trafficLights.north.state === 'green') {
+                    this.trafficLights.north.state = 'yellow';
+                    this.trafficLights.north.toggleTime = Date.now();
+                    this.trafficLights.north.effectTime = 0;
+                    this.trafficLights.north.hasEffect = true;
+                }
+                
+                if (this.trafficLights.south.state === 'green') {
+                    this.trafficLights.south.state = 'yellow';
+                    this.trafficLights.south.toggleTime = Date.now();
+                    this.trafficLights.south.effectTime = 0;
+                    this.trafficLights.south.hasEffect = true;
+                }
+            } else if (this.trafficLights.east.state === 'red' && this.trafficLights.west.state === 'red') {
+                // If both east and west are red, north/south can be green
+                if (this.trafficLights.north.state === 'red') {
+                    this.trafficLights.north.state = 'green';
+                    this.trafficLights.north.toggleTime = Date.now();
+                    this.trafficLights.north.effectTime = 0;
+                    this.trafficLights.north.hasEffect = true;
+                }
+                
+                if (this.trafficLights.south.state === 'red') {
+                    this.trafficLights.south.state = 'green';
+                    this.trafficLights.south.toggleTime = Date.now();
+                    this.trafficLights.south.effectTime = 0;
+                    this.trafficLights.south.hasEffect = true;
+                }
+            }
+        }
     }
     
     getTrafficLightState(direction) {
@@ -325,16 +286,39 @@ export class Intersection {
                 // Add effect for automatic light change
                 light.effectTime = 0;
                 light.hasEffect = true;
+                
+                console.log(`Traffic light ${direction} automatically changed to red`);
+                
+                // Check if we need to update perpendicular lights
+                const perpendicularDirections = 
+                    (direction === 'north' || direction === 'south') 
+                    ? ['east', 'west'] 
+                    : ['north', 'south'];
+                
+                // If all perpendicular lights are red, make them green
+                const allPerpendicularsRed = perpendicularDirections.every(
+                    dir => this.trafficLights[dir].state === 'red'
+                );
+                
+                if (allPerpendicularsRed) {
+                    for (const perpDir of perpendicularDirections) {
+                        this.trafficLights[perpDir].state = 'green';
+                        this.trafficLights[perpDir].toggleTime = Date.now();
+                        this.trafficLights[perpDir].effectTime = 0;
+                        this.trafficLights[perpDir].hasEffect = true;
+                        console.log(`Traffic light ${perpDir} automatically changed to green`);
+                    }
+                }
             }
         }
     }
     
     render(ctx) {
-        // Render the roads
         this.renderRoads(ctx);
-        
-        // Render the traffic lights
         this.renderTrafficLights(ctx);
+        
+        // Debug: visualize the paths
+        this.renderDebugPaths(ctx);
     }
     
     renderRoads(ctx) {
@@ -535,5 +519,164 @@ export class Intersection {
             
             ctx.fillText(directionText, textX, textY);
         }
+    }
+    
+    renderDebugPaths(ctx) {
+        // Draw all paths to debug
+        ctx.save();
+        
+        // Draw each path
+        for (const pathName in this.lanes) {
+            const path = this.lanes[pathName];
+            
+            // Skip if not a valid path
+            if (!path.start || !path.end) continue;
+            
+            // Draw start and end points
+            ctx.fillStyle = 'blue';
+            ctx.beginPath();
+            ctx.arc(path.start.x, path.start.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(path.end.x, path.end.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw control points if they exist
+            if (path.control1 && path.control2) {
+                ctx.fillStyle = 'purple';
+                ctx.beginPath();
+                ctx.arc(path.control1.x, path.control1.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(path.control2.x, path.control2.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw the actual path curve
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(path.start.x, path.start.y);
+                
+                // Draw the Bezier curve
+                ctx.bezierCurveTo(
+                    path.control1.x, path.control1.y,
+                    path.control2.x, path.control2.y,
+                    path.end.x, path.end.y
+                );
+                ctx.stroke();
+            } else {
+                // Draw straight path
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(path.start.x, path.start.y);
+                ctx.lineTo(path.end.x, path.end.y);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw traffic light detection zones
+        this.renderTrafficLightZones(ctx);
+        
+        ctx.restore();
+    }
+    
+    renderTrafficLightZones(ctx) {
+        // Visualize the traffic light detection zones
+        const roadWidth = this.roadWidth;
+        const centerX = this.centerX;
+        const centerY = this.centerY;
+        
+        // North detection zone
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+        ctx.fillRect(
+            centerX - roadWidth/2,
+            centerY - roadWidth/2 - 50,
+            roadWidth,
+            50
+        );
+        
+        // South detection zone
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+        ctx.fillRect(
+            centerX - roadWidth/2,
+            centerY + roadWidth/2,
+            roadWidth,
+            50
+        );
+        
+        // East detection zone
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+        ctx.fillRect(
+            centerX + roadWidth/2,
+            centerY - roadWidth/2,
+            50,
+            roadWidth
+        );
+        
+        // West detection zone
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+        ctx.fillRect(
+            centerX - roadWidth/2 - 50,
+            centerY - roadWidth/2,
+            50,
+            roadWidth
+        );
+        
+        // Draw stop lines
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+        ctx.lineWidth = 2;
+        
+        // North stop line
+        ctx.beginPath();
+        ctx.moveTo(centerX - roadWidth/2, centerY - roadWidth/2);
+        ctx.lineTo(centerX + roadWidth/2, centerY - roadWidth/2);
+        ctx.stroke();
+        
+        // South stop line
+        ctx.beginPath();
+        ctx.moveTo(centerX - roadWidth/2, centerY + roadWidth/2);
+        ctx.lineTo(centerX + roadWidth/2, centerY + roadWidth/2);
+        ctx.stroke();
+        
+        // East stop line
+        ctx.beginPath();
+        ctx.moveTo(centerX + roadWidth/2, centerY - roadWidth/2);
+        ctx.lineTo(centerX + roadWidth/2, centerY + roadWidth/2);
+        ctx.stroke();
+        
+        // West stop line
+        ctx.beginPath();
+        ctx.moveTo(centerX - roadWidth/2, centerY - roadWidth/2);
+        ctx.lineTo(centerX - roadWidth/2, centerY + roadWidth/2);
+        ctx.stroke();
+        
+        // Add traffic light state indicators
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // North light state
+        ctx.fillStyle = this.trafficLights.north.state === 'red' ? 'red' : 
+                        this.trafficLights.north.state === 'yellow' ? 'yellow' : 'green';
+        ctx.fillText(this.trafficLights.north.state, centerX, centerY - roadWidth/2 - 20);
+        
+        // South light state
+        ctx.fillStyle = this.trafficLights.south.state === 'red' ? 'red' : 
+                        this.trafficLights.south.state === 'yellow' ? 'yellow' : 'green';
+        ctx.fillText(this.trafficLights.south.state, centerX, centerY + roadWidth/2 + 20);
+        
+        // East light state
+        ctx.fillStyle = this.trafficLights.east.state === 'red' ? 'red' : 
+                        this.trafficLights.east.state === 'yellow' ? 'yellow' : 'green';
+        ctx.fillText(this.trafficLights.east.state, centerX + roadWidth/2 + 20, centerY);
+        
+        // West light state
+        ctx.fillStyle = this.trafficLights.west.state === 'red' ? 'red' : 
+                        this.trafficLights.west.state === 'yellow' ? 'yellow' : 'green';
+        ctx.fillText(this.trafficLights.west.state, centerX - roadWidth/2 - 20, centerY);
     }
 } 

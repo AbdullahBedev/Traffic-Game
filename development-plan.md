@@ -1,6 +1,5 @@
 # Traffic Light Management Game - Development Plan (COMPLETE)
 
-always run using : http-server -p 8083 
 
 ## Project Overview
 A straightforward traffic management game where players control traffic lights at a single four-way intersection. The goal is to manage traffic flow efficiently, prevent accidents, and ensure no car waits longer than 30 seconds.

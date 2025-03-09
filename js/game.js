@@ -26,6 +26,11 @@ export class Game {
         this.longestWaitTime = 0;
         this.gameTime = 0;
         this.startTime = 0;
+        // Track cars waiting too long
+        this.carsWaitingTooLong = 0;
+        this.waitingCarsMap = new Map(); // Track which cars are waiting too long
+        // Track all waiting cars and their wait times
+        this.waitingCars = new Map(); // Map of car ID to wait time
         
         // Initialize components
         this.setupCanvas();
@@ -181,6 +186,10 @@ export class Game {
         this.longestWaitTime = 0;
         this.gameTime = 0;
         this.startTime = Date.now();
+        // Reset waiting cars
+        this.carsWaitingTooLong = 0;
+        this.waitingCarsMap = new Map();
+        this.waitingCars = new Map();
         
         // Initialize components for the game
         this.intersection.reset();
@@ -232,8 +241,20 @@ export class Game {
         document.getElementById('score-value').textContent = this.score;
     }
     
-    updateMaxWaitTime(waitTime) {
-        if (waitTime > this.longestWaitTime) {
+    updateMaxWaitTime(waitTime, carId) {
+        // If car is waiting, update its wait time in our tracking map
+        if (waitTime > 0) {
+            this.waitingCars.set(carId, waitTime);
+        } else if (this.waitingCars.has(carId)) {
+            // Car is no longer waiting, remove it from our tracking
+            this.waitingCars.delete(carId);
+            
+            // Recalculate the longest wait time from remaining waiting cars
+            this.recalculateLongestWaitTime();
+        }
+        
+        // Only update the max wait time UI if a car has been waiting for more than 10 seconds
+        if (waitTime > 10000 && waitTime > this.longestWaitTime) {
             this.longestWaitTime = waitTime;
             
             // Update UI
@@ -255,10 +276,95 @@ export class Game {
             } else {
                 waitElement.classList.add('good');
             }
+        }
+        
+        // Track cars waiting too long - using carId to avoid counting the same car multiple times
+        if (waitTime >= 30000) {
+            if (carId && !this.waitingCarsMap.has(carId)) {
+                this.waitingCarsMap.set(carId, true);
+                this.carsWaitingTooLong++;
+                
+                // Update the UI to show warning about waiting cars
+                const waitCountElement = document.getElementById('wait-count');
+                if (waitCountElement) {
+                    waitCountElement.textContent = `${this.carsWaitingTooLong}/3`;
+                    waitCountElement.style.color = this.carsWaitingTooLong >= 2 ? 'red' : 'orange';
+                } else {
+                    // Create warning element if it doesn't exist
+                    const uiOverlay = document.getElementById('ui-overlay');
+                    if (uiOverlay) {
+                        const warningDiv = document.createElement('div');
+                        warningDiv.id = 'wait-warning';
+                        warningDiv.style.position = 'absolute';
+                        warningDiv.style.top = '70px';
+                        warningDiv.style.left = '10px';
+                        warningDiv.style.padding = '5px';
+                        warningDiv.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                        warningDiv.style.borderRadius = '5px';
+                        warningDiv.style.color = 'white';
+                        warningDiv.innerHTML = `Cars waiting too long: <span id="wait-count" style="color: orange;">${this.carsWaitingTooLong}/3</span>`;
+                        uiOverlay.appendChild(warningDiv);
+                    }
+                }
+                
+                // Play warning sound
+                this.soundManager.play('carHorn', 0.7);
+                
+                // Game over if 3 cars have waited more than 30 seconds
+                if (this.carsWaitingTooLong >= 3) {
+                    this.gameOver('3 cars were waiting for more than 30 seconds!');
+                }
+            }
+        } else if (carId && this.waitingCarsMap.has(carId)) {
+            // If car is no longer waiting too long, remove it from the map
+            this.waitingCarsMap.delete(carId);
+            this.carsWaitingTooLong--;
             
-            // Game over if wait time exceeds 30 seconds
-            if (waitTime >= 30000) {
-                this.gameOver('A car was waiting for more than 30 seconds!');
+            // Update the UI
+            const waitCountElement = document.getElementById('wait-count');
+            if (waitCountElement) {
+                waitCountElement.textContent = `${this.carsWaitingTooLong}/3`;
+                waitCountElement.style.color = this.carsWaitingTooLong >= 2 ? 'red' : 'orange';
+            }
+        }
+    }
+    
+    // New method to recalculate the longest wait time from all waiting cars
+    recalculateLongestWaitTime() {
+        let newLongestWaitTime = 0;
+        
+        // Find the new longest wait time among all waiting cars
+        this.waitingCars.forEach((waitTime, carId) => {
+            if (waitTime > 10000 && waitTime > newLongestWaitTime) {
+                newLongestWaitTime = waitTime;
+            }
+        });
+        
+        // If the longest wait time has changed, update it
+        if (newLongestWaitTime !== this.longestWaitTime) {
+            this.longestWaitTime = newLongestWaitTime;
+            
+            // Update UI
+            const waitSeconds = Math.round(this.longestWaitTime / 1000);
+            document.getElementById('wait-value').textContent = waitSeconds;
+            
+            // Update wait time color class
+            const waitElement = document.getElementById('max-wait');
+            waitElement.classList.remove('good', 'medium', 'bad');
+            
+            if (waitSeconds > 25) {
+                waitElement.classList.add('bad');
+            } else if (waitSeconds > 15) {
+                waitElement.classList.add('medium');
+            } else if (waitSeconds > 0) {
+                waitElement.classList.add('good');
+            }
+            
+            // If there are no cars waiting more than 10 seconds, reset the counter to 0
+            if (newLongestWaitTime === 0) {
+                document.getElementById('wait-value').textContent = '0';
+                waitElement.classList.remove('good', 'medium', 'bad');
+                waitElement.classList.add('good');
             }
         }
     }

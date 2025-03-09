@@ -161,36 +161,44 @@ export class CarManager {
                 if (pathType === 'straight') {
                     return this.intersection.lanes.northToSouth;
                 } else if (pathType === 'right') {
-                    return this.intersection.lanes.northToEast;
+                    // Fall back to straight path if turn path is not available
+                    return this.intersection.lanes.northToSouth;
                 } else { // left
-                    return this.intersection.lanes.northToWest;
+                    // Fall back to straight path if turn path is not available
+                    return this.intersection.lanes.northToSouth;
                 }
             
             case 'east':
                 if (pathType === 'straight') {
                     return this.intersection.lanes.eastToWest;
                 } else if (pathType === 'right') {
-                    return this.intersection.lanes.eastToSouth;
+                    // Fall back to straight path if turn path is not available
+                    return this.intersection.lanes.eastToWest;
                 } else { // left
-                    return this.intersection.lanes.eastToNorth;
+                    // Fall back to straight path if turn path is not available
+                    return this.intersection.lanes.eastToWest;
                 }
             
             case 'south':
                 if (pathType === 'straight') {
                     return this.intersection.lanes.southToNorth;
                 } else if (pathType === 'right') {
-                    return this.intersection.lanes.southToWest;
+                    // Fall back to straight path if turn path is not available
+                    return this.intersection.lanes.southToNorth;
                 } else { // left
-                    return this.intersection.lanes.southToEast;
+                    // Fall back to straight path if turn path is not available
+                    return this.intersection.lanes.southToNorth;
                 }
             
             case 'west':
                 if (pathType === 'straight') {
                     return this.intersection.lanes.westToEast;
                 } else if (pathType === 'right') {
-                    return this.intersection.lanes.westToNorth;
+                    // Fall back to straight path if turn path is not available
+                    return this.intersection.lanes.westToEast;
                 } else { // left
-                    return this.intersection.lanes.westToSouth;
+                    // Fall back to straight path if turn path is not available
+                    return this.intersection.lanes.westToEast;
                 }
         }
     }
